@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify
 
 app = Flask(__name__)
@@ -8,7 +9,7 @@ def home():
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({"status": "healthy", "env": os.environ.get("APP_ENV", "development")}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

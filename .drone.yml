@@ -8,3 +8,33 @@ steps:
     commands:
       - pip install -r requirements.txt
       - pytest tests/
+
+  - name: publish
+    image: plugins/docker
+    settings:
+      username:
+        from_secret: DOCKER_USERNAME
+      password:
+        from_secret: DOCKER_PASSWORD
+      repo: kabacase/devops-pipeline
+      tags:
+        - latest
+        - ${DRONE_COMMIT_SHA:0:7}
+    depends_on:
+      - test
+
+  - name: deploy
+    image: appleboy/drone-ssh
+    settings:
+      host: 35.255.75.220
+      username: ubuntu
+      key:
+        from_secret: SSH_KEY
+      port: 22
+      script:
+        - docker pull kabacase/devops-pipeline:latest
+        - docker stop devops-app || true
+        - docker rm devops-app || true
+        - docker run -d --name devops-app --restart unless-stopped -p 5000:5000 -e APP_ENV=production kabacase/devops-pipeline:latest
+    depends_on:
+      - publish
